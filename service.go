@@ -82,22 +82,23 @@ func (s *service[T]) register(
 func (s *service[T]) read(
 	client *Client,
 ) {
-
 	defer s.disconnect(client)
 
 	for {
-		s.receive(client)
+		if err := s.receive(client); err != nil {
+			return
+		}
 	}
 }
 
 func (s *service[T]) receive(
 	client *Client,
-) {
+) error {
 
 	var input IncomingMessage[T]
 
 	if err := client.Conn.ReadJSON(&input); err != nil {
-		return
+		return err
 	}
 
 	msg := s.message(
@@ -106,6 +107,8 @@ func (s *service[T]) receive(
 	)
 
 	s.send(msg)
+
+	return nil
 }
 
 func (s *service[T]) message(
